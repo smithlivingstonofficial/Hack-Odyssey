@@ -208,19 +208,148 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
         ) : (
           <div
             style={{
-              padding: "16px",
-              border: "1.5px dashed #cbd5e1",
+              padding: "12px 14px",
+              border: "1.5px dashed #3b82f6",
               borderRadius: "10px",
               textAlign: "center",
-              marginBottom: "18px",
-              background: "#f8fafc",
+              marginBottom: "16px",
+              background: "#eff6ff",
+              position: "relative",
             }}
           >
-            <UploadCloud style={{ width: 24, height: 24, color: "#2563eb", margin: "0 auto 6px" }} />
-            <div style={{ fontSize: "12px", fontWeight: 600, color: "#334155" }}>
-              Upload GIS Shapefile, GeoJSON or Registry Deed
+            <input
+              type="file"
+              id="geojson-upload-input"
+              accept=".geojson,.json,.kml"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    try {
+                      const data = JSON.parse(event.target?.result as string);
+                      // Check for feature or coordinates
+                      if (data.type === "FeatureCollection" && data.features?.[0]) {
+                        const feat = data.features[0];
+                        const coords = feat.geometry?.coordinates;
+                        if (coords && coords.length >= 2) {
+                          const lon = coords[0];
+                          const lat = coords[1];
+                          const props = feat.properties || {};
+                          const area = props.area_sqft || props.area || 1800;
+                          const name = props.name || file.name.replace(/\.[^/.]+$/, "");
+                          onChangeInput({
+                            area_sqft: area,
+                            address: `${name}, Tamil Nadu`,
+                            market_rate_per_sqft: props.rate || 7500,
+                          });
+                          onSelectCoordinates(lat, lon, `${name}, Tamil Nadu`);
+                        }
+                      } else {
+                        // generic format
+                        onChangeInput({
+                          area_sqft: 1500,
+                          address: `${file.name.replace(/\.[^/.]+$/, "")} (Uploaded)`,
+                        });
+                      }
+                    } catch (parseErr) {
+                      console.warn("Could not parse file:", parseErr);
+                    }
+                  };
+                  reader.readAsText(file);
+                }
+              }}
+            />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "4px" }}>
+              <UploadCloud style={{ width: 20, height: 20, color: "#2563eb" }} />
+              <label
+                htmlFor="geojson-upload-input"
+                style={{ fontSize: "12px", fontWeight: 700, color: "#1d4ed8", cursor: "pointer", textDecoration: "underline" }}
+              >
+                Upload GIS GeoJSON / Shapefile
+              </label>
             </div>
-            <div style={{ fontSize: "10px", color: "#94a3b8" }}>Drag & drop .geojson, .kml or deed file</div>
+            <div style={{ fontSize: "10px", color: "#64748b", marginBottom: "8px" }}>
+              Or load verified Tamil Nadu parcel demo:
+            </div>
+            <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeInput({
+                    area_sqft: 2400,
+                    property_type: "residential",
+                    market_rate_per_sqft: 8500,
+                    num_floors: 2,
+                    address: "Anna Nagar West Cadastre, Chennai",
+                  });
+                  onSelectCoordinates(13.0878, 80.2088, "Anna Nagar West Cadastre, Chennai");
+                }}
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: "6px",
+                  padding: "3px 8px",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: "#1e40af",
+                  cursor: "pointer",
+                }}
+              >
+                Anna Nagar Cadastre (2,400 sq.ft)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeInput({
+                    area_sqft: 6500,
+                    property_type: "commercial",
+                    market_rate_per_sqft: 11000,
+                    num_floors: 4,
+                    address: "OMR IT Corridor Tech Park, Sholinganallur",
+                  });
+                  onSelectCoordinates(12.8996, 80.2279, "OMR IT Corridor Tech Park, Sholinganallur");
+                }}
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: "6px",
+                  padding: "3px 8px",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: "#1e40af",
+                  cursor: "pointer",
+                }}
+              >
+                OMR IT Park (6,500 sq.ft)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeInput({
+                    area_sqft: 3200,
+                    property_type: "residential",
+                    market_rate_per_sqft: 9200,
+                    num_floors: 2,
+                    address: "ECR Beachfront Plot, Neelankarai",
+                  });
+                  onSelectCoordinates(12.9482, 80.2588, "ECR Beachfront Plot, Neelankarai");
+                }}
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: "6px",
+                  padding: "3px 8px",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: "#1e40af",
+                  cursor: "pointer",
+                }}
+              >
+                ECR Coastal Plot (3,200 sq.ft)
+              </button>
+            </div>
           </div>
         )}
 

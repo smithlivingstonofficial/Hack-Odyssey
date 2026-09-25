@@ -6,17 +6,50 @@ import { ChevronDown } from "lucide-react";
 export const ClimateRiskOverTimeCard: React.FC = () => {
   const [selectedHazard, setSelectedHazard] = useState("Flood Risk");
 
-  // Trend data points (x: 2020 to 2050, y: percentage)
-  // Low: y=80, Medium: y=50, High: y=20
-  const points = [
-    { year: "2020", x: 25, y: 72 },
-    { year: "2025", x: 65, y: 55 },
-    { year: "2030", x: 105, y: 48 },
-    { year: "2035", x: 145, y: 42 },
-    { year: "2040", x: 185, y: 35 },
-    { year: "2045", x: 225, y: 28 },
-    { year: "2050", x: 265, y: 22 },
-  ];
+  const hazardConfigs: Record<string, { color: string; fill: string; points: { year: string; x: number; y: number }[] }> = {
+    "Flood Risk": {
+      color: "#2563eb",
+      fill: "#2563eb",
+      points: [
+        { year: "2020", x: 25, y: 72 },
+        { year: "2025", x: 65, y: 55 },
+        { year: "2030", x: 105, y: 48 },
+        { year: "2035", x: 145, y: 42 },
+        { year: "2040", x: 185, y: 35 },
+        { year: "2045", x: 225, y: 28 },
+        { year: "2050", x: 265, y: 22 },
+      ],
+    },
+    "Heat Exposure": {
+      color: "#ea580c",
+      fill: "#ea580c",
+      points: [
+        { year: "2020", x: 25, y: 68 },
+        { year: "2025", x: 65, y: 52 },
+        { year: "2030", x: 105, y: 44 },
+        { year: "2035", x: 145, y: 38 },
+        { year: "2040", x: 185, y: 30 },
+        { year: "2045", x: 225, y: 24 },
+        { year: "2050", x: 265, y: 16 },
+      ],
+    },
+    "Cyclone Risk": {
+      color: "#d97706",
+      fill: "#d97706",
+      points: [
+        { year: "2020", x: 25, y: 62 },
+        { year: "2025", x: 65, y: 58 },
+        { year: "2030", x: 105, y: 50 },
+        { year: "2035", x: 145, y: 45 },
+        { year: "2040", x: 185, y: 39 },
+        { year: "2045", x: 225, y: 32 },
+        { year: "2050", x: 265, y: 26 },
+      ],
+    },
+  };
+
+  const currentConfig = hazardConfigs[selectedHazard] || hazardConfigs["Flood Risk"];
+  const points = currentConfig.points;
 
   const pathD = points.reduce(
     (acc, p, idx) => (idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`),
@@ -114,8 +147,8 @@ export const ClimateRiskOverTimeCard: React.FC = () => {
           <svg width="100%" height="95" viewBox="0 0 290 95" style={{ overflow: "visible" }}>
             <defs>
               <linearGradient id="trendAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+                <stop offset="0%" stopColor={currentConfig.color} stopOpacity="0.25" />
+                <stop offset="100%" stopColor={currentConfig.color} stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -128,10 +161,10 @@ export const ClimateRiskOverTimeCard: React.FC = () => {
             <path d={areaD} fill="url(#trendAreaGradient)" />
 
             {/* Trend Line */}
-            <path d={pathD} fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={pathD} fill="none" stroke={currentConfig.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
             {/* Forecast dashed projection segment from 2035 to 2050 */}
-            <line x1="145" y1="42" x2="265" y2="22" stroke="#2563eb" strokeWidth="2" strokeDasharray="4 4" />
+            <line x1={points[3]?.x || 145} y1={points[3]?.y || 42} x2={points[6]?.x || 265} y2={points[6]?.y || 22} stroke={currentConfig.color} strokeWidth="2" strokeDasharray="4 4" />
 
             {/* Dots */}
             {points.map((p, idx) => (
@@ -140,8 +173,8 @@ export const ClimateRiskOverTimeCard: React.FC = () => {
                 cx={p.x}
                 cy={p.y}
                 r={idx === 3 ? "4.5" : "3"}
-                fill={idx === 3 ? "#2563eb" : "#ffffff"}
-                stroke="#2563eb"
+                fill={idx === 3 ? currentConfig.color : "#ffffff"}
+                stroke={currentConfig.color}
                 strokeWidth="2"
               />
             ))}

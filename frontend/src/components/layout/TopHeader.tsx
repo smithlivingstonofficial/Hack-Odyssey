@@ -34,6 +34,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
 }) => {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: "⚠️ Flood Advisory", desc: "Cooum River drainage catchment alert", time: "10m ago" },
+    { id: 2, title: "🌡️ Heat Wave Warning", desc: "Surface temperature anomaly in industrial zones", time: "1h ago" },
+    { id: 3, title: "🌀 Cyclone Approach Vector", desc: "Gale track monitoring over Bay of Bengal", time: "3h ago" },
+  ]);
 
   const topTabs = [
     { id: "home", label: "Home" },
@@ -299,113 +306,222 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           })}
         </nav>
 
-        {/* Notification Bell with Badge */}
-        <button
-          type="button"
-          title="System notifications"
-          style={{
-            width: "38px",
-            height: "38px",
-            borderRadius: "50%",
-            border: "1px solid #e2e8f0",
-            background: "#ffffff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#64748b",
-            cursor: "pointer",
-            position: "relative",
-            transition: "all 0.15s ease",
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#f8fafc";
-            e.currentTarget.style.borderColor = "#cbd5e1";
-            e.currentTarget.style.color = "#1e293b";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#ffffff";
-            e.currentTarget.style.borderColor = "#e2e8f0";
-            e.currentTarget.style.color = "#64748b";
-          }}
-        >
-          <Bell style={{ width: 17, height: 17 }} />
-          <span
-            style={{
-              position: "absolute",
-              top: "8px",
-              right: "8px",
-              width: "7px",
-              height: "7px",
-              background: "#ef4444",
-              border: "1.5px solid #ffffff",
-              borderRadius: "50%",
+        {/* Notification Bell with Badge & Dropdown */}
+        <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            title="System notifications"
+            onClick={() => {
+              setIsNotificationOpen(!isNotificationOpen);
+              setIsProfileOpen(false);
             }}
-          />
-        </button>
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "50%",
+              border: isNotificationOpen ? "2px solid #2563eb" : "1px solid #e2e8f0",
+              background: isNotificationOpen ? "#eff6ff" : "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: isNotificationOpen ? "#2563eb" : "#64748b",
+              cursor: "pointer",
+              position: "relative",
+              transition: "all 0.15s ease",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+            }}
+          >
+            <Bell style={{ width: 17, height: 17 }} />
+            {notifications.length > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  width: "7px",
+                  height: "7px",
+                  background: "#ef4444",
+                  border: "1.5px solid #ffffff",
+                  borderRadius: "50%",
+                }}
+              />
+            )}
+          </button>
 
-        {/* User Profile Pill (Modern Institutional Style) */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            padding: "4px 12px 4px 5px",
-            borderRadius: "30px",
-            border: "1px solid #e2e8f0",
-            background: "#ffffff",
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "#cbd5e1";
-            e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.06)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#e2e8f0";
-            e.currentTarget.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.03)";
-          }}
-        >
-          {/* Avatar with Status Dot */}
-          <div style={{ position: "relative" }}>
+          {/* Interactive Notification Popover */}
+          {isNotificationOpen && (
             <div
               style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "12px",
-                fontWeight: 700,
-                boxShadow: "0 2px 4px rgba(234, 88, 12, 0.25)",
+                position: "absolute",
+                top: "48px",
+                right: "0px",
+                width: "320px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "14px",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -2px rgba(0, 0, 0, 0.05)",
+                zIndex: 1000,
+                padding: "16px",
               }}
             >
-              SR
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>Notifications</span>
+                  <span style={{ background: "#eff6ff", color: "#2563eb", fontSize: "10px", fontWeight: 700, padding: "1px 6px", borderRadius: "10px" }}>
+                    {notifications.length} New
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNotifications([])}
+                  style={{ background: "transparent", border: "none", color: "#64748b", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}
+                >
+                  Clear all
+                </button>
+              </div>
+
+              {notifications.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "16px 0", color: "#94a3b8", fontSize: "12px" }}>
+                  No new notifications
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      style={{
+                        padding: "10px",
+                        borderRadius: "8px",
+                        background: "#f8fafc",
+                        border: "1px solid #f1f5f9",
+                        fontSize: "11px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, color: "#0f172a" }}>{n.title}</span>
+                        <span style={{ color: "#94a3b8", fontSize: "10px" }}>{n.time}</span>
+                      </div>
+                      <div style={{ color: "#475569", marginTop: "3px", lineHeight: "1.4" }}>{n.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* Green Online Dot */}
-            <span
-              style={{
-                position: "absolute",
-                bottom: "0px",
-                right: "0px",
-                width: "8px",
-                height: "8px",
-                background: "#10b981",
-                border: "1.5px solid #ffffff",
-                borderRadius: "50%",
-              }}
-            />
+          )}
+        </div>
+
+        {/* User Profile Pill & Dropdown */}
+        <div style={{ position: "relative" }}>
+          <div
+            onClick={() => {
+              setIsProfileOpen(!isProfileOpen);
+              setIsNotificationOpen(false);
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "4px 12px 4px 5px",
+              borderRadius: "30px",
+              border: isProfileOpen ? "2px solid #2563eb" : "1px solid #e2e8f0",
+              background: isProfileOpen ? "#eff6ff" : "#ffffff",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            {/* Avatar with Status Dot */}
+            <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  boxShadow: "0 2px 4px rgba(234, 88, 12, 0.25)",
+                }}
+              >
+                SR
+              </div>
+              {/* Green Online Dot */}
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: "0px",
+                  right: "0px",
+                  width: "8px",
+                  height: "8px",
+                  background: "#10b981",
+                  border: "1.5px solid #ffffff",
+                  borderRadius: "50%",
+                }}
+              />
+            </div>
+
+            {/* User details */}
+            <div style={{ textAlign: "left", lineHeight: "1.2" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>Sam Roy</div>
+              <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 500 }}>User</div>
+            </div>
           </div>
 
-          {/* User details */}
-          <div style={{ textAlign: "left", lineHeight: "1.2" }}>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#0f172a" }}>Sam Roy</div>
-            <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 500 }}>User</div>
-          </div>
+          {/* User Profile Popover */}
+          {isProfileOpen && (
+            <div
+              style={{
+                position: "absolute",
+                top: "48px",
+                right: "0px",
+                width: "240px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "14px",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 4px 10px -2px rgba(0, 0, 0, 0.05)",
+                zIndex: 1000,
+                padding: "16px",
+              }}
+            >
+              <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "10px", marginBottom: "10px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>Sam Roy</div>
+                <div style={{ fontSize: "11px", color: "#2563eb", fontWeight: 600 }}>Senior Valuation Officer</div>
+                <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>TerraValue TN Analytics</div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px" }}>
+                <div style={{ color: "#64748b", fontWeight: 600 }}>Jurisdiction: Tamil Nadu</div>
+                <div style={{ color: "#64748b" }}>Status: Licensed Institutional Appraiser</div>
+              </div>
+
+              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "10px", marginTop: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChangeTopTab("about");
+                    setIsProfileOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: "#334155",
+                    cursor: "pointer",
+                  }}
+                >
+                  View Agency License
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

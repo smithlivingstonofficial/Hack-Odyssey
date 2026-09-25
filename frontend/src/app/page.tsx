@@ -88,11 +88,25 @@ export default function DashboardPage() {
       const geo = await geocodeAddress(query);
       const label = geo.display_name || query;
       setLocationLabel(label);
+
+      let marketRate = input.market_rate_per_sqft;
+      const lower = label.toLowerCase();
+      if (lower.includes("madurai")) marketRate = 5285;
+      else if (lower.includes("anna nagar")) marketRate = 6000;
+      else if (lower.includes("coimbatore")) marketRate = 6500;
+      else if (lower.includes("trichy") || lower.includes("tiruchirappalli")) marketRate = 4500;
+      else if (lower.includes("cuddalore")) marketRate = 3600;
+      else if (lower.includes("omr") || lower.includes("sholinganallur")) marketRate = 7000;
+      else if (lower.includes("velachery")) marketRate = 8000;
+      else if (lower.includes("marina") || lower.includes("triplicane")) marketRate = 12000;
+      else if (lower.includes("t nagar")) marketRate = 13000;
+
       const updated: PropertyInput = {
         ...input,
         latitude: geo.latitude,
         longitude: geo.longitude,
         address: label,
+        market_rate_per_sqft: marketRate,
       };
       setInput(updated);
       runAnalysis(updated);
@@ -107,11 +121,25 @@ export default function DashboardPage() {
   const handleSelectCoordinates = useCallback((lat: number, lon: number, label?: string) => {
     const display = label || `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
     setLocationLabel(display);
+
+    let marketRate = input.market_rate_per_sqft;
+    const lower = display.toLowerCase();
+    if (lower.includes("madurai")) marketRate = 5285;
+    else if (lower.includes("anna nagar")) marketRate = 6000;
+    else if (lower.includes("coimbatore")) marketRate = 6500;
+    else if (lower.includes("trichy") || lower.includes("tiruchirappalli")) marketRate = 4500;
+    else if (lower.includes("cuddalore")) marketRate = 3600;
+    else if (lower.includes("omr") || lower.includes("sholinganallur")) marketRate = 7000;
+    else if (lower.includes("velachery")) marketRate = 8000;
+    else if (lower.includes("marina") || lower.includes("triplicane")) marketRate = 12000;
+    else if (lower.includes("t nagar")) marketRate = 13000;
+
     const updated: PropertyInput = {
       ...input,
       latitude: lat,
       longitude: lon,
       address: display,
+      market_rate_per_sqft: marketRate,
     };
     setInput(updated);
     runAnalysis(updated);
@@ -294,26 +322,17 @@ export default function DashboardPage() {
 
           {activeNav === "dashboard" && (
             <>
-              {/* SECTION 1: TOP ROW (Hero Input Card on Left + Embedded Satellite Map on Right) */}
+              {/* SECTION 1: TOP ROW (Embedded Satellite Map on Left + Find Valuation Card on Right) */}
               <section
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1.05fr 1.25fr",
+                  gridTemplateColumns: "1.25fr 1.05fr",
                   gap: "18px",
                   marginBottom: "18px",
                   alignItems: "stretch",
                 }}
               >
-                {/* Left: Find Climate-Adjusted Value Form */}
-                <HeroValuationCard
-                  input={input}
-                  onChangeInput={(updated) => setInput((prev) => ({ ...prev, ...updated }))}
-                  onAnalyze={() => runAnalysis(input)}
-                  isLoading={isLoading}
-                  onSelectCoordinates={handleSelectCoordinates}
-                />
-
-                {/* Right: Interactive Satellite GIS Map */}
+                {/* Left: Interactive Satellite GIS Map */}
                 <EmbeddedMapCard
                   targetCoords={[input.latitude, input.longitude]}
                   locationLabel={locationLabel}
@@ -322,6 +341,15 @@ export default function DashboardPage() {
                   activeCity={activeCity}
                   activeHazard={activeHazard}
                   onChangeHazard={setActiveHazard}
+                />
+
+                {/* Right: Find Climate-Adjusted Value Form */}
+                <HeroValuationCard
+                  input={input}
+                  onChangeInput={(updated) => setInput((prev) => ({ ...prev, ...updated }))}
+                  onAnalyze={() => runAnalysis(input)}
+                  isLoading={isLoading}
+                  onSelectCoordinates={handleSelectCoordinates}
                 />
               </section>
 

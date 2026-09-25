@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { MapPin, Crosshair, ArrowRight, Loader2, UploadCloud } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { MapPin, Crosshair, ArrowRight, Loader2, UploadCloud, Search } from "lucide-react";
 import { PropertyInput, geocodeAddress } from "@/lib/api";
 
 interface HeroValuationCardProps {
@@ -24,19 +24,57 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
   const [isLocating, setIsLocating] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  const handleSearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Synchronize input.address with searchQuery when address changes from outside
+  useEffect(() => {
+    if (input.address && input.address !== searchQuery) {
+      setSearchQuery(input.address);
+    }
+  }, [input.address]);
+
+  const handleSearchSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsLocating(true);
     setSearchError(null);
     try {
-      const res = await geocodeAddress(searchQuery);
-      onSelectCoordinates(res.latitude, res.longitude, res.display_name);
+      const res = await geocodeAddress(searchQuery.trim());
+      const label = res.display_name || searchQuery.trim();
+      setSearchQuery(label);
+      onChangeInput({
+        address: label,
+        latitude: res.latitude,
+        longitude: res.longitude,
+      });
+      onSelectCoordinates(res.latitude, res.longitude, label);
     } catch (err: any) {
       setSearchError(err.message || "Failed to locate address");
     } finally {
       setIsLocating(false);
+    }
+  };
+
+  const handleAnalyzeClick = async () => {
+    if (searchQuery.trim() && searchQuery.trim().toLowerCase() !== (input.address || "").toLowerCase()) {
+      setIsLocating(true);
+      try {
+        const res = await geocodeAddress(searchQuery.trim());
+        const label = res.display_name || searchQuery.trim();
+        setSearchQuery(label);
+        onChangeInput({
+          address: label,
+          latitude: res.latitude,
+          longitude: res.longitude,
+        });
+        onSelectCoordinates(res.latitude, res.longitude, label);
+      } catch (err) {
+        console.warn("Auto-geocoding fallback on analyze:", err);
+        onAnalyze();
+      } finally {
+        setIsLocating(false);
+      }
+    } else {
+      onAnalyze();
     }
   };
 
@@ -48,7 +86,14 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
           setIsLocating(false);
           const lat = pos.coords.latitude;
           const lon = pos.coords.longitude;
-          onSelectCoordinates(lat, lon, `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`);
+          const label = `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
+          setSearchQuery(label);
+          onChangeInput({
+            address: label,
+            latitude: lat,
+            longitude: lon,
+          });
+          onSelectCoordinates(lat, lon, label);
         },
         () => {
           setIsLocating(false);
@@ -157,15 +202,16 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
                 alignItems: "center",
                 background: "#ffffff",
                 border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                padding: "8px 12px",
+                borderRadius: "30px",
+                padding: "4px 6px 4px 14px",
                 transition: "border-color 0.15s ease",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
               }}
             >
               <MapPin style={{ width: 16, height: 16, color: "#94a3b8", marginRight: "8px", flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder="Enter address, area or pin code..."
+                placeholder="Enter address, city or pin code (e.g. Madurai, Anna Nagar)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -175,6 +221,7 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
                   fontSize: "13px",
                   color: "#1e293b",
                   fontWeight: 500,
+                  background: "transparent",
                 }}
               />
               <button
@@ -186,17 +233,55 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
-                  color: "#64748b",
-                  padding: "4px",
+                  color: "#94a3b8",
+                  padding: "6px",
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  marginRight: "4px",
+                  transition: "color 0.15s ease",
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "#2563eb"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#94a3b8"; }}
               >
                 {isLocating ? (
-                  <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+                  <Loader2 style={{ width: 15, height: 15, animation: "spin 1s linear infinite" }} />
                 ) : (
-                  <Crosshair style={{ width: 16, height: 16 }} />
+                  <Crosshair style={{ width: 15, height: 15 }} />
                 )}
+              </button>
+
+              {/* Prominent Blue Search CTA button matching the navbar style */}
+              <button
+                type="submit"
+                disabled={isLocating}
+                style={{
+                  padding: "7px 18px",
+                  background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "20px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)",
+                  transition: "all 0.15s ease",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(37, 99, 235, 0.4)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(37, 99, 235, 0.3)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                {isLocating ? "Searching..." : "Search"}
               </button>
             </div>
             {searchError && (
@@ -469,8 +554,8 @@ export const HeroValuationCard: React.FC<HeroValuationCardProps> = ({
       {/* Full-Width Analyze Property CTA Button */}
       <button
         type="button"
-        disabled={isLoading}
-        onClick={onAnalyze}
+        disabled={isLoading || isLocating}
+        onClick={handleAnalyzeClick}
         style={{
           width: "100%",
           padding: "13px 20px",

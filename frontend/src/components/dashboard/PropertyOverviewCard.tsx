@@ -1,7 +1,6 @@
-"use client";
-
 import React from "react";
-import { PropertyInput } from "@/lib/api";
+import { PropertyInput, resolveTamilNaduLocality, formatINR } from "@/lib/api";
+import { Navigation } from "lucide-react";
 
 interface PropertyOverviewCardProps {
   input: PropertyInput;
@@ -12,10 +11,25 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
   input,
   locationLabel = "Anna Nagar, Chennai, Tamil Nadu",
 }) => {
-  // Format city and state
-  const parts = locationLabel.split(",");
-  const primaryTitle = parts[0]?.trim() || "Anna Nagar, Chennai";
-  const stateSubtitle = parts.slice(1).join(",").trim() || "Tamil Nadu, India";
+  // Check if string looks like raw coordinates (e.g. "9.1528°N", "77.9816°E")
+  const isCoord = (str: string) =>
+    /^\s*\d+\.\d+\s*°?\s*[NSEW]?/i.test(str) || str.includes("°N") || str.includes("°E");
+
+  let primaryTitle = "Anna Nagar";
+  let stateSubtitle = "Chennai, Tamil Nadu";
+
+  const rawLabel = (locationLabel || input.address || "").trim();
+
+  if (isCoord(rawLabel)) {
+    // Resolve real-world place name from spatial Tamil Nadu centroids
+    const resolved = resolveTamilNaduLocality(input.latitude, input.longitude);
+    primaryTitle = resolved.name;
+    stateSubtitle = resolved.district;
+  } else {
+    const parts = rawLabel.split(",");
+    primaryTitle = parts[0]?.trim() || "Anna Nagar";
+    stateSubtitle = parts.slice(1).join(",").trim() || "Tamil Nadu, India";
+  }
 
   return (
     <div
@@ -119,23 +133,54 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
             </svg>
           </div>
 
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
                 fontSize: "15px",
-                fontWeight: 700,
+                fontWeight: 800,
                 color: "#0f172a",
-                lineHeight: "1.3",
+                lineHeight: "1.25",
                 textOverflow: "ellipsis",
                 overflow: "hidden",
                 whiteSpace: "nowrap",
-                maxWidth: "190px",
+                maxWidth: "200px",
               }}
+              title={primaryTitle}
             >
               {primaryTitle}
             </div>
-            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#64748b",
+                marginTop: "3px",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                maxWidth: "200px",
+              }}
+              title={stateSubtitle}
+            >
               {stateSubtitle}
+            </div>
+            {/* Real GIS coordinates micro-badge */}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                marginTop: "4px",
+                background: "#f1f5f9",
+                border: "1px solid #e2e8f0",
+                padding: "2px 7px",
+                borderRadius: "4px",
+                fontSize: "10px",
+                color: "#64748b",
+                fontWeight: 600,
+              }}
+            >
+              <Navigation style={{ width: 10, height: 10, color: "#2563eb" }} />
+              <span>{input.latitude.toFixed(4)}°N, {input.longitude.toFixed(4)}°E</span>
             </div>
           </div>
         </div>

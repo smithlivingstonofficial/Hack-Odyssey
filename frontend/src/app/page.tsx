@@ -29,6 +29,8 @@ import {
   RealPropertyAsset,
   analyzeProperty,
   geocodeAddress,
+  reverseGeocodeAddress,
+  resolveTamilNaduLocality,
 } from "@/lib/api";
 import { X, Play, Loader2, Sliders } from "lucide-react";
 
@@ -119,12 +121,18 @@ export default function DashboardPage() {
 
   // Select coordinates from map click
   const handleSelectCoordinates = useCallback((lat: number, lon: number, label?: string) => {
-    const display = label || `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
-    setLocationLabel(display);
+    // If no label or label is raw coordinate string, resolve real Tamil Nadu locality
+    const isCoordOnly = !label || /^\s*\d+\.\d+\s*°?\s*[NSEW]?/i.test(label) || label.includes("°N") || label.includes("°E");
+    const localResolved = resolveTamilNaduLocality(lat, lon);
+    const initialDisplay = isCoordOnly ? localResolved.display_name : label;
+
+    setLocationLabel(initialDisplay);
 
     let marketRate = input.market_rate_per_sqft;
-    const lower = display.toLowerCase();
+    const lower = initialDisplay.toLowerCase();
     if (lower.includes("madurai")) marketRate = 5285;
+    else if (lower.includes("kovilpatti") || lower.includes("sattur")) marketRate = 5285;
+    else if (lower.includes("sivakasi")) marketRate = 3200;
     else if (lower.includes("anna nagar")) marketRate = 6000;
     else if (lower.includes("coimbatore")) marketRate = 6500;
     else if (lower.includes("trichy") || lower.includes("tiruchirappalli")) marketRate = 4500;
@@ -138,11 +146,26 @@ export default function DashboardPage() {
       ...input,
       latitude: lat,
       longitude: lon,
-      address: display,
+      address: initialDisplay,
       market_rate_per_sqft: marketRate,
     };
     setInput(updated);
     runAnalysis(updated);
+
+    // Asynchronously refine with detailed reverse geocoding from backend / Nominatim
+    if (isCoordOnly) {
+      reverseGeocodeAddress(lat, lon)
+        .then((geo) => {
+          if (geo && geo.display_name && !geo.display_name.includes("°N")) {
+            setLocationLabel(geo.display_name);
+            setInput((prev) => ({
+              ...prev,
+              address: geo.display_name,
+            }));
+          }
+        })
+        .catch((e) => console.warn("Reverse geocode async notice:", e));
+    }
   }, [input, runAnalysis]);
 
   // Select real property asset from map cadastre badges

@@ -208,6 +208,127 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   };
 }
 
+// Spatial region centroids for instant Tamil Nadu district & locality resolution
+const TN_REGIONAL_CENTROIDS = [
+  { name: "Kovilpatti Commercial Zone", district: "Thoothukudi District, Tamil Nadu", city: "Kovilpatti", lat: 9.1700, lon: 77.8700, radius: 0.45 },
+  { name: "Sattur Industrial Taluk", district: "Virudhunagar District, Tamil Nadu", city: "Sattur", lat: 9.3500, lon: 77.9200, radius: 0.35 },
+  { name: "Madurai City Center", district: "Madurai District, Tamil Nadu", city: "Madurai", lat: 9.9252, lon: 78.1198, radius: 0.35 },
+  { name: "Sivakasi Industrial Taluk", district: "Virudhunagar District, Tamil Nadu", city: "Sivakasi", lat: 9.4500, lon: 77.8000, radius: 0.30 },
+  { name: "Tirunelveli Junction", district: "Tirunelveli District, Tamil Nadu", city: "Tirunelveli", lat: 8.7139, lon: 77.7567, radius: 0.35 },
+  { name: "Thoothukudi Coastal Port", district: "Thoothukudi District, Tamil Nadu", city: "Thoothukudi", lat: 8.7642, lon: 78.1348, radius: 0.35 },
+  { name: "Anna Nagar West", district: "Chennai, Tamil Nadu", city: "Chennai", lat: 13.0827, lon: 80.2198, radius: 0.10 },
+  { name: "OMR IT Tech Corridor", district: "Kanchipuram / Chennai, Tamil Nadu", city: "Chennai", lat: 12.9010, lon: 80.2279, radius: 0.15 },
+  { name: "Velachery Basin", district: "Chennai, Tamil Nadu", city: "Chennai", lat: 12.9759, lon: 80.2212, radius: 0.10 },
+  { name: "Marina Beach Zone", district: "Chennai, Tamil Nadu", city: "Chennai", lat: 13.0500, lon: 80.2824, radius: 0.10 },
+  { name: "Coimbatore Central Hub", district: "Coimbatore District, Tamil Nadu", city: "Coimbatore", lat: 11.0168, lon: 76.9558, radius: 0.40 },
+  { name: "Tiruchirappalli Central", district: "Tiruchirappalli District, Tamil Nadu", city: "Tiruchirappalli", lat: 10.8285, lon: 78.6912, radius: 0.40 },
+  { name: "Salem Steel City", district: "Salem District, Tamil Nadu", city: "Salem", lat: 11.6643, lon: 78.1460, radius: 0.35 },
+  { name: "Cuddalore Port Zone", district: "Cuddalore District, Tamil Nadu", city: "Cuddalore", lat: 11.7500, lon: 79.7700, radius: 0.30 },
+  { name: "Erode Industrial Belt", district: "Erode District, Tamil Nadu", city: "Erode", lat: 11.3410, lon: 77.7172, radius: 0.30 },
+  { name: "Tiruppur Textile City", district: "Tiruppur District, Tamil Nadu", city: "Tiruppur", lat: 11.1085, lon: 77.3411, radius: 0.30 },
+  { name: "Dindigul Town", district: "Dindigul District, Tamil Nadu", city: "Dindigul", lat: 10.3673, lon: 77.9803, radius: 0.30 },
+  { name: "Thanjavur Delta Region", district: "Thanjavur District, Tamil Nadu", city: "Thanjavur", lat: 10.7870, lon: 79.1378, radius: 0.30 },
+  { name: "Nagercoil Commercial", district: "Kanyakumari District, Tamil Nadu", city: "Nagercoil", lat: 8.1833, lon: 77.4119, radius: 0.30 },
+  { name: "Vellore Fort City", district: "Vellore District, Tamil Nadu", city: "Vellore", lat: 12.9165, lon: 79.1325, radius: 0.30 },
+  { name: "Ooty Mountain Plateau", district: "The Nilgiris, Tamil Nadu", city: "Ooty", lat: 11.4102, lon: 76.6950, radius: 0.30 },
+  { name: "Rameswaram Coastal Corridor", district: "Ramanathapuram District, Tamil Nadu", city: "Rameswaram", lat: 9.2876, lon: 79.3129, radius: 0.30 },
+];
+
+/**
+ * Instantly resolve coordinates to a real Tamil Nadu place name without waiting for network.
+ */
+export function resolveTamilNaduLocality(lat: number, lon: number): { name: string; district: string; city: string; display_name: string } {
+  let closest = TN_REGIONAL_CENTROIDS[0];
+  let minDistanceSq = Number.MAX_VALUE;
+
+  for (const region of TN_REGIONAL_CENTROIDS) {
+    const dLat = lat - region.lat;
+    const dLon = lon - region.lon;
+    const distSq = dLat * dLat + dLon * dLon;
+    if (distSq < minDistanceSq) {
+      minDistanceSq = distSq;
+      closest = region;
+    }
+  }
+
+  return {
+    name: closest.name,
+    district: closest.district,
+    city: closest.city,
+    display_name: `${closest.name}, ${closest.district}`,
+  };
+}
+
+/**
+ * Reverse geocode coordinates to real-world address in Tamil Nadu with instant spatial fallback.
+ */
+export async function reverseGeocodeAddress(lat: number, lon: number): Promise<GeocodeResult> {
+  const localResolution = resolveTamilNaduLocality(lat, lon);
+
+  // 1. Try backend reverse-geocode endpoint
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/reverse-geocode?lat=${lat}&lon=${lon}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.display_name && !data.display_name.includes("°N")) {
+        return {
+          address: data.display_name,
+          latitude: lat,
+          longitude: lon,
+          display_name: data.display_name,
+          city: data.city || localResolution.city,
+          state: "Tamil Nadu",
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Backend reverse-geocode notice:", err);
+  }
+
+  // 2. Try direct OpenStreetMap Nominatim reverse lookup
+  try {
+    const nomRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+      { headers: { "Accept-Language": "en" } }
+    );
+    if (nomRes.ok) {
+      const data = await nomRes.json();
+      const addr = data.address || {};
+      const primary =
+        addr.suburb ||
+        addr.neighbourhood ||
+        addr.town ||
+        addr.city ||
+        addr.village ||
+        addr.road ||
+        localResolution.name;
+      const district = addr.county || addr.state_district || addr.city || localResolution.city;
+      const display = `${primary}, ${district}, Tamil Nadu, India`;
+
+      return {
+        address: display,
+        latitude: lat,
+        longitude: lon,
+        display_name: display,
+        city: addr.city || addr.town || localResolution.city,
+        state: "Tamil Nadu",
+      };
+    }
+  } catch (nomErr) {
+    console.warn("Direct Nominatim reverse geocode notice:", nomErr);
+  }
+
+  // 3. Fallback to instant spatial Tamil Nadu locality
+  return {
+    address: localResolution.display_name,
+    latitude: lat,
+    longitude: lon,
+    display_name: localResolution.display_name,
+    city: localResolution.city,
+    state: "Tamil Nadu",
+  };
+}
+
 /**
  * Format INR currency value.
  */

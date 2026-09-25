@@ -349,8 +349,8 @@ export default function DashboardPage() {
               <section
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1.25fr 1.05fr",
-                  gap: "18px",
+                  gridTemplateColumns: "2.35fr 0.9fr",
+                  gap: "16px",
                   marginBottom: "18px",
                   alignItems: "stretch",
                 }}
@@ -380,31 +380,40 @@ export default function DashboardPage() {
               <section
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gridTemplateColumns: "1fr 1.35fr 1.05fr",
                   gap: "18px",
                   marginBottom: "18px",
                   alignItems: "stretch",
                 }}
               >
-                {/* Middle 1: Property Overview with Architectural Vector Illustration */}
+                {/* Middle 1: Property Overview with Architectural Cadastre Profile */}
                 <PropertyOverviewCard
                   input={input}
                   locationLabel={locationLabel}
+                  onEditProperty={() => setIsEditModalOpen(true)}
                 />
 
-                {/* Middle 2: Overall Climate Risk Score (SVG Radial Gauge + Progress Bars) */}
+                {/* Middle 2: Overall Climate Risk Score (Speedometer Radial Gauge + Hazard Progress Bars) */}
                 <ClimateRiskScoreCard
                   overallScore={analysis?.overall_risk_score ?? 72}
                   overallCategory={analysis?.overall_risk_category ?? "High Risk"}
                   riskScores={analysis?.risk_scores}
                   elevationM={analysis?.climate_features?.elevation_m ?? 8}
+                  propertyInput={input}
+                  confidence={analysis?.risk_scores?.[0]?.confidence ?? 0.85}
+                  onExploreHazard={(h) => {
+                    if (h === "flood" || h === "inundation") setActiveHazard("flood");
+                    else if (h === "heat") setActiveHazard("thermal");
+                    else if (h === "cyclone") setActiveHazard("cyclone");
+                  }}
                 />
 
-                {/* Middle 3: Value Estimation Card */}
+                {/* Middle 3: Executive Financial Valuation Card */}
                 <ClimateValuationCard
                   valuation={analysis?.valuation}
                   baseRate={input.market_rate_per_sqft}
                   areaSqft={input.area_sqft}
+                  onOpenReport={() => setIsReportOpen(true)}
                 />
               </section>
 

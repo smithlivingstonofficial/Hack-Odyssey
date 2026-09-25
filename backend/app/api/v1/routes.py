@@ -19,6 +19,7 @@ from app.ml.risk_models import (
     predict_flood_risk,
     predict_heat_risk,
     predict_cyclone_risk,
+    predict_inundation_risk,
     aggregate_risk,
 )
 from app.valuation.engine import calculate_valuation
@@ -71,12 +72,13 @@ async def analyze_property(property_input: PropertyInput):
         )
 
     # Step 4: Run risk prediction models
-    flood_risk = predict_flood_risk(climate_features, lat, lon)
-    heat_risk = predict_heat_risk(climate_features, lat, lon)
-    cyclone_risk = predict_cyclone_risk(climate_features, lat, lon)
+    flood_risk = predict_flood_risk(climate_features, lat, lon, property_input)
+    heat_risk = predict_heat_risk(climate_features, lat, lon, property_input)
+    cyclone_risk = predict_cyclone_risk(climate_features, lat, lon, property_input)
+    inundation_risk = predict_inundation_risk(climate_features, lat, lon, property_input)
 
-    risk_scores = [flood_risk, heat_risk, cyclone_risk]
-    overall_score, overall_category = aggregate_risk(flood_risk, heat_risk, cyclone_risk)
+    risk_scores = [flood_risk, heat_risk, cyclone_risk, inundation_risk]
+    overall_score, overall_category = aggregate_risk(flood_risk, heat_risk, cyclone_risk, inundation_risk)
 
     # Step 5: Calculate financial impact and valuation
     valuation = calculate_valuation(

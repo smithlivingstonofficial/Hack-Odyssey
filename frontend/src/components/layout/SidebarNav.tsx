@@ -45,29 +45,29 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     badgeColor?: string;
     badgeBg?: string;
   }[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    {
-      id: "saved",
-      label: "Saved Properties",
-      icon: Bookmark,
-      badge: "3",
-      badgeColor: "#64748b",
-      badgeBg: "#f1f5f9",
-    },
-    { id: "comparison", label: "Comparison", icon: GitCompare },
-    { id: "risk-maps", label: "Risk Maps", icon: Map },
-    {
-      id: "reports",
-      label: "Reports",
-      icon: FileText,
-      badge: "PDF",
-      badgeColor: "#2563eb",
-      badgeBg: "#eff6ff",
-    },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "learn", label: "Learn", icon: GraduationCap },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+      {
+        id: "saved",
+        label: "Saved Properties",
+        icon: Bookmark,
+        badge: "3",
+        badgeColor: "#64748b",
+        badgeBg: "#f1f5f9",
+      },
+      { id: "comparison", label: "Comparison", icon: GitCompare },
+      { id: "risk-maps", label: "Risk Maps", icon: Map },
+      {
+        id: "reports",
+        label: "Reports",
+        icon: FileText,
+        badge: "PDF",
+        badgeColor: "#2563eb",
+        badgeBg: "#eff6ff",
+      },
+      { id: "analytics", label: "Analytics", icon: BarChart3 },
+      { id: "learn", label: "Learn", icon: GraduationCap },
+      { id: "settings", label: "Settings", icon: Settings },
+    ];
 
   return (
     <aside

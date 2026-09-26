@@ -79,6 +79,9 @@ class FinancialImpact(BaseModel):
     explanation: str
 
 
+from typing import Optional, List, Dict, Any
+
+
 class ValuationResult(BaseModel):
     """Complete valuation result."""
     base_value_inr: float
@@ -88,6 +91,30 @@ class ValuationResult(BaseModel):
     total_climate_impact_inr: float
     total_climate_impact_percentage: float
     adjusted_value_inr: float
+    ml_predicted_base_value: Optional[float] = None
+    benchmark_source: Optional[str] = None
+    climate_engine_data: Optional[Dict[str, Any]] = None
+
+
+class PropertyPredictionInput(BaseModel):
+    """Input for Tamil Nadu Climate Property Prediction."""
+    district: str = Field(..., min_length=1, description="District name (e.g. Pudukkottai, Chennai)")
+    city: str = Field(..., min_length=1, description="City / Block name")
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    area_sqft: float = Field(..., gt=0)
+    market_rate_per_sqft: float = Field(..., gt=0)
+
+
+class PropertyPredictionResponse(BaseModel):
+    """Output for Tamil Nadu Climate Property Prediction."""
+    property: Dict[str, Any]
+    valuation: Dict[str, Any]
+    risk_breakdown: Dict[str, Any]
+    data_sources: Dict[str, Any]
+    data_completeness: float
+    available_factors: List[str]
+
 
 
 class ScenarioProjection(BaseModel):

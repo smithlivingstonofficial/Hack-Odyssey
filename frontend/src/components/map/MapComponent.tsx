@@ -245,7 +245,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   activeBasemap: propBasemap,
   onChangeBasemap: propSetBasemap,
   hideInternalControls = false,
-  showProperties: propShowProperties,
+  showProperties: propShowProperties = false,
 }) => {
   const [internalHazard, setInternalHazard] = useState<HazardLayerType>("thermal");
   const [internalBasemap, setInternalBasemap] = useState<BasemapType>("satellite");
@@ -256,7 +256,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const activeBasemap = propBasemap !== undefined ? propBasemap : internalBasemap;
   const setActiveBasemap = propSetBasemap || setInternalBasemap;
 
-  const [internalShowProperties, setInternalShowProperties] = useState<boolean>(true);
+  const [internalShowProperties, setInternalShowProperties] = useState<boolean>(false);
   const showProperties = propShowProperties !== undefined ? propShowProperties : internalShowProperties;
   const setShowProperties = setInternalShowProperties;
 
@@ -469,9 +469,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           activeBasemap={activeBasemap}
           onChangeBasemap={setActiveBasemap}
           isLoadingLayer={isLoadingLayer}
-          showProperties={showProperties}
-          onToggleProperties={setShowProperties}
-          propertyCount={nearbyProperties.length}
         />
       )}
 

@@ -8,7 +8,6 @@ import {
   Wind,
   Waves,
   Mountain,
-  LayoutGrid,
   MapPin,
   X,
   Plus,
@@ -81,8 +80,6 @@ export const EmbeddedMapCard: React.FC<EmbeddedMapCardProps> = ({
   const [activeBasemap, setActiveBasemap] = useState<BasemapType>("satellite");
   const [zoomLevel, setZoomLevel] = useState<number>(11);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [showProperties, setShowProperties] = useState<boolean>(true);
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchInput, setSearchInput] = useState<string>("");
 
@@ -121,7 +118,7 @@ export const EmbeddedMapCard: React.FC<EmbeddedMapCardProps> = ({
         top: isFullscreen ? 0 : undefined,
         left: isFullscreen ? 0 : undefined,
         width: isFullscreen ? "100vw" : "100%",
-        height: isFullscreen ? "100vh" : "440px",
+        height: isFullscreen ? "100vh" : "480px",
         zIndex: isFullscreen ? 9999 : 1,
         borderRadius: isFullscreen ? 0 : "16px",
         overflow: "hidden",
@@ -361,134 +358,6 @@ export const EmbeddedMapCard: React.FC<EmbeddedMapCardProps> = ({
             </button>
           );
         })}
-
-        {/* More Settings / Price Pins Toggle */}
-        <div style={{ position: "relative" }}>
-          <button
-            type="button"
-            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "6px 2px",
-              borderRadius: "8px",
-              border: "1.5px solid transparent",
-              background: isMoreMenuOpen ? "#f1f5f9" : "transparent",
-              color: "#64748b",
-              cursor: "pointer",
-              width: "100%",
-            }}
-          >
-            <LayoutGrid style={{ width: 16, height: 16, marginBottom: "2px" }} />
-            <span style={{ fontSize: "9.5px", fontWeight: 600 }}>More</span>
-          </button>
-
-          {/* More Options Popover */}
-          {isMoreMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: "64px",
-                background: "#ffffff",
-                borderRadius: "10px",
-                padding: "8px 10px",
-                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2)",
-                border: "1px solid #e2e8f0",
-                width: "180px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-                zIndex: 1100,
-              }}
-            >
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>
-                Map Layers
-              </div>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={showProperties}
-                  onChange={(e) => setShowProperties(e.target.checked)}
-                  style={{ accentColor: "#2563eb" }}
-                />
-                <span>Real Property Prices</span>
-              </label>
-
-              <div style={{ borderTop: "1px solid #f1f5f9", margin: "3px 0" }} />
-
-              <div style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>
-                Quick Locations
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectCoords(13.0827, 80.2107, "Anna Nagar, Chennai, Tamil Nadu");
-                  setIsMoreMenuOpen(false);
-                }}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  textAlign: "left",
-                  fontSize: "11px",
-                  color: "#334155",
-                  cursor: "pointer",
-                  padding: "3px 0",
-                }}
-              >
-                • Anna Nagar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectCoords(12.9010, 80.2279, "OMR Tech Corridor, Chennai, Tamil Nadu");
-                  setIsMoreMenuOpen(false);
-                }}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  textAlign: "left",
-                  fontSize: "11px",
-                  color: "#334155",
-                  cursor: "pointer",
-                  padding: "3px 0",
-                }}
-              >
-                • OMR IT Corridor
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelectCoords(13.0500, 80.2824, "Marina Coast, Chennai, Tamil Nadu");
-                  setIsMoreMenuOpen(false);
-                }}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  textAlign: "left",
-                  fontSize: "11px",
-                  color: "#334155",
-                  cursor: "pointer",
-                  padding: "3px 0",
-                }}
-              >
-                • Marina Coastline
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* 4. Floating Top-Right Legend Card matching reference */}
@@ -707,7 +576,7 @@ export const EmbeddedMapCard: React.FC<EmbeddedMapCardProps> = ({
         activeBasemap={activeBasemap}
         onChangeBasemap={setActiveBasemap}
         hideInternalControls={true}
-        showProperties={showProperties}
+        showProperties={false}
       />
     </div>
   );

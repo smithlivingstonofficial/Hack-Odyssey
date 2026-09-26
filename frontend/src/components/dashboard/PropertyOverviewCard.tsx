@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { PropertyInput, resolveTamilNaduLocality } from "@/lib/api";
+import { PropertyInput, resolveTamilNaduLocality, classifyTamilNaduTerrain } from "@/lib/api";
 import {
   Navigation,
   Building2,
@@ -56,7 +56,7 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
         background: "linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%)",
         border: "1px solid #e2e8f0",
         borderRadius: "18px",
-        padding: "18px 20px",
+        padding: "14px 16px",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02), 0 10px 25px -5px rgba(0, 0, 0, 0.04)",
         display: "flex",
         flexDirection: "column",
@@ -107,7 +107,7 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
                 Property Overview
               </h3>
               <p style={{ fontSize: "11px", color: "#64748b", margin: "1px 0 0 0", fontWeight: 500 }}>
-                Cadastre Asset Identification & Specifications
+                Location & Property Details
               </p>
             </div>
           </div>
@@ -128,7 +128,7 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
             }}
           >
             <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#10b981" }} />
-            Verified Parcel
+            Verified Location
           </span>
         </div>
 
@@ -257,9 +257,9 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
           >
             <Mountain size={13} color="#059669" style={{ flexShrink: 0 }} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: "9px", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Topography</div>
+              <div style={{ fontSize: "9px", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Terrain</div>
               <div style={{ fontSize: "11px", fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap" }}>
-                Coastal Basin Plan
+                {classifyTamilNaduTerrain(input.latitude, input.longitude)}
               </div>
             </div>
           </div>
@@ -278,10 +278,10 @@ export const PropertyOverviewCard: React.FC<PropertyOverviewCardProps> = ({
             <ShieldCheck size={13} color={defensesCount > 0 ? "#059669" : "#94a3b8"} style={{ flexShrink: 0 }} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: "9px", color: defensesCount > 0 ? "#047857" : "#64748b", fontWeight: 700, textTransform: "uppercase" }}>
-                Defenses
+                Protection
               </div>
               <div style={{ fontSize: "11px", fontWeight: 700, color: defensesCount > 0 ? "#065f46" : "#475569", whiteSpace: "nowrap" }}>
-                {defensesCount > 0 ? `${defensesCount} Active Defenses` : "Standard Build"}
+                {defensesCount > 0 ? `${defensesCount} Active Features` : "Standard Build"}
               </div>
             </div>
           </div>

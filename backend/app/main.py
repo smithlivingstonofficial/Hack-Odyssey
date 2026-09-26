@@ -38,8 +38,22 @@ app.include_router(router)
 @app.get("/")
 async def root():
     return {
-        "name": "Climate Property Intelligence API",
+        "name": "Tamil Nadu Climate-Adjusted Property Valuation & Intelligence API",
+        "message": "Tamil Nadu Climate-Adjusted Property Valuation API running",
+        "status": "running",
+        "service": "property_valuation",
         "version": "1.0.0-mvp",
         "docs": "/docs",
         "health": "/api/v1/health",
     }
+
+
+from app.schemas.property import PropertyPredictionInput, PropertyPredictionResponse
+from app.api.v1.routes import predict_property_endpoint
+
+
+@app.post("/predict", response_model=PropertyPredictionResponse)
+async def root_predict(property: PropertyPredictionInput):
+    """Direct root predict endpoint matching Tamil Nadu Climate-Property specification."""
+    return await predict_property_endpoint(property)
+

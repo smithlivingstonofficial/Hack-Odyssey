@@ -52,7 +52,24 @@ def predict_flood_risk(
     drivers: List[RiskDriver] = []
     scores = []
 
+    # 0. High-resolution ISRO/Bhuvan Flood Inundation Satellite Mask (GeoTIFF)
+    try:
+        from app.services.climate_engine import calculate_flood_exposure
+        flood_mask = calculate_flood_exposure(lat, lon)
+        if flood_mask > 0:
+            mask_score = 94.0
+            scores.append(("isro_flood_mask", mask_score, 0.28))
+            drivers.append(RiskDriver(
+                factor="ISRO/Bhuvan Flood Mask",
+                value="Active Satellite Inundation Zone",
+                impact="high",
+                description="Satellite multi-year archive (2003-2020) records recurrent surface flood inundation"
+            ))
+    except Exception:
+        pass
+
     # 1. Elevation factor (Continuous sigmoid response)
+
     # Low-lying (<10m) coastal basins experience heavy runoff pooling
     elev_score = float(np.clip(96.0 / (1.0 + (features.elevation_m / 16.0) ** 1.8), 3.0, 98.0))
     scores.append(("elevation", elev_score, 0.22))
@@ -167,7 +184,26 @@ def predict_heat_risk(
     drivers: List[RiskDriver] = []
     scores = []
 
+    # 0. IMD Block-level Heat Exposure & Warming Trends
+    try:
+        from app.services.climate_engine import calculate_heat_exposure
+        addr = (property_input.address or "") if property_input else ""
+        heat_res = calculate_heat_exposure(addr, addr)
+        if heat_res.get("tmax_change"):
+            t_diff = heat_res["tmax_change"]
+            h_val = float(np.clip(heat_res.get("heat_risk", 0.5) * 100.0, 10.0, 95.0))
+            scores.append(("imd_warming", h_val, 0.22))
+            drivers.append(RiskDriver(
+                factor="IMD Decadal Warming",
+                value=f"+{t_diff:.2f}°C warming anomaly",
+                impact=_impact_level(h_val / 100 * 0.22),
+                description=f"Official IMD climate dataset verifies +{t_diff:.2f}°C maximum temperature rise ({heat_res.get('heat_source', 'regional')})"
+            ))
+    except Exception:
+        pass
+
     # 1. Maximum temperature (Logistic sigmoid centered at 37.5°C wet-bulb stress threshold)
+
     temp_score = float(np.clip(100.0 / (1.0 + np.exp(-0.35 * (features.max_temperature_c - 37.5))), 5.0, 98.0))
     scores.append(("temperature", temp_score, 0.28))
     drivers.append(RiskDriver(
@@ -269,7 +305,24 @@ def predict_cyclone_risk(
     drivers: List[RiskDriver] = []
     scores = []
 
+    # 0. IBTrACS Historical Cyclone Tracks within 100km buffer
+    try:
+        from app.services.climate_engine import calculate_cyclone_exposure
+        cyc_exp = calculate_cyclone_exposure(lat, lon)
+        if cyc_exp.get("nearest_cyclone_km") is not None:
+            c_score = float(np.clip(cyc_exp["cyclone_intensity"] * 100.0, 5.0, 96.0))
+            scores.append(("ibtracs_track", c_score, 0.28))
+            drivers.append(RiskDriver(
+                factor="IBTrACS Storm Track History",
+                value=f"{cyc_exp.get('max_nearby_wind_knots', 0):.0f} kt max, {cyc_exp['nearest_cyclone_km']}km away",
+                impact=_impact_level(cyc_exp["cyclone_intensity"]),
+                description=f"Recorded storm track corridor within 100km buffer (intensity: {cyc_exp['cyclone_intensity']:.2f})"
+            ))
+    except Exception:
+        pass
+
     # 1. Historical cyclone frequency
+
     count_score = float(np.clip((1.0 - np.exp(-features.cyclone_count_100km / 6.5)) * 96.0, 4.0, 96.0))
     scores.append(("count", count_score, 0.28))
     drivers.append(RiskDriver(
@@ -374,14 +427,27 @@ def predict_inundation_risk(
     ))
 
     # 2. Coastal & tidal waterway proximity
-    dist_km = features.distance_to_water_m / 1000.0
-    coast_score = float(np.clip(96.0 * np.exp(-dist_km / 6.0), 3.0, 98.0))
+    # Only low-lying coastal terrain (< 25m MSL within 30km of coastline) is subject to marine surge
+    from app.services.feature_orchestrator import _distance_to_tn_coast_km
+    coast_dist_km = _distance_to_tn_coast_km(lat, lon)
+
+    if features.elevation_m < 25.0 and coast_dist_km < 35.0:
+        coast_score = float(np.clip(96.0 * np.exp(-coast_dist_km / 6.0), 3.0, 98.0))
+        coast_desc = (
+            "Close maritime proximity subjects structure to high-tide and cyclonic water push"
+            if coast_dist_km < 5.0
+            else "Coastal buffer mitigates tidal surge penetration"
+        )
+    else:
+        # Inland location or elevated ground above marine surge plain
+        coast_score = float(np.clip(8.0 * np.exp(-coast_dist_km / 60.0), 2.0, 10.0))
+        coast_desc = f"Inland elevation ({features.elevation_m:.0f}m MSL, {coast_dist_km:.0f}km from sea) is fully insulated against marine storm surge"
+
     drivers.append(RiskDriver(
-        factor="Distance to Coastal Inundation Line",
-        value=f"{dist_km:.1f}km to coastline/estuary",
+        factor="Coastal Storm Surge Penetration",
+        value=f"{coast_dist_km:.1f}km to coastline",
         impact=_impact_level(coast_score / 100 * 0.35),
-        description="Close maritime proximity subjects structure to high-tide and cyclonic water push"
-        if dist_km < 5.0 else "Distance from coast insulates against extreme sea surge penetration"
+        description=coast_desc
     ))
 
     # 3. Slope gradient (drainage velocity)

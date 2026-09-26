@@ -1,19 +1,14 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { TopHeader } from "@/components/layout/TopHeader";
 import { SidebarNav, NavTabType } from "@/components/layout/SidebarNav";
 import { EmbeddedMapCard } from "@/components/dashboard/EmbeddedMapCard";
 import { HeroValuationCard } from "@/components/dashboard/HeroValuationCard";
-import { PropertyOverviewCard } from "@/components/dashboard/PropertyOverviewCard";
 import { SelectedPropertyCard } from "@/components/dashboard/SelectedPropertyCard";
 import { ClimateValuationCard } from "@/components/dashboard/ClimateValuationCard";
 import { ClimateRiskScoreCard } from "@/components/dashboard/ClimateRiskScoreCard";
+import { LiveEnvironmentalMetricsCard } from "@/components/dashboard/LiveEnvironmentalMetricsCard";
 import { KeyInsightsCard } from "@/components/dashboard/KeyInsightsCard";
-import { ValueImpactBreakdownCard } from "@/components/dashboard/ValueImpactBreakdownCard";
-import { ClimateRiskOverTimeCard } from "@/components/dashboard/ClimateRiskOverTimeCard";
-import { MapLayersCard } from "@/components/dashboard/MapLayersCard";
-import { FutureScenarioCard } from "@/components/dashboard/FutureScenarioCard";
 import { ExecutiveReportModal } from "@/components/report/ExecutiveReportModal";
 import { HazardLayerType } from "@/components/map/MapLayerControl";
 import { SavedPropertiesView } from "@/components/views/SavedPropertiesView";
@@ -36,7 +31,6 @@ import { X, Play, Loader2, Sliders } from "lucide-react";
 
 export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState<NavTabType>("dashboard");
-  const [activeTopTab, setActiveTopTab] = useState<string>("valuation");
   const [activeHazard, setActiveHazard] = useState<HazardLayerType>("thermal");
 
   const [input, setInput] = useState<PropertyInput>({
@@ -210,47 +204,19 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", flexDirection: "column" }}>
-      {/* Top Header Bar */}
-      <TopHeader
-        activeTopTab={activeTopTab}
-        onChangeTopTab={(tab) => {
-          setActiveTopTab(tab);
-          if (tab === "home" || tab === "valuation") {
-            setActiveNav("dashboard");
-          } else if (tab === "map") {
-            setActiveNav("risk-maps");
-          } else if (tab === "reports") {
-            setActiveNav("reports");
-          } else if (tab === "about") {
-            setActiveNav("learn");
+    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", flexDirection: "row" }}>
+      {/* Left Navigation Sidebar */}
+      <SidebarNav
+        activeNav={activeNav}
+        onChangeNav={(nav) => {
+          if (nav === "new-assessment") {
+            setIsEditModalOpen(true);
+            return;
           }
+          setActiveNav(nav);
         }}
-        onSearch={handleSearchLocation}
-        locationLabel={locationLabel}
-        isSearching={isSearching}
-        activeCity={activeCity}
-        onSelectCity={handleSelectCity}
+        onNewAssessment={() => setIsEditModalOpen(true)}
       />
-
-      {/* Main Body: Sidebar + Dashboard Canvas */}
-      <div style={{ display: "flex", flex: 1 }}>
-        {/* Left Navigation Sidebar */}
-        <SidebarNav
-          activeNav={activeNav}
-          onChangeNav={(nav) => {
-            if (nav === "new-assessment") {
-              setIsEditModalOpen(true);
-              return;
-            }
-            setActiveNav(nav);
-            if (nav === "dashboard") setActiveTopTab("valuation");
-            else if (nav === "risk-maps") setActiveTopTab("map");
-            else if (nav === "reports") setActiveTopTab("reports");
-            else if (nav === "learn") setActiveTopTab("about");
-          }}
-          onNewAssessment={() => setIsEditModalOpen(true)}
-        />
 
         {/* Main Canvas Workspace */}
         <main
@@ -270,13 +236,11 @@ export default function DashboardPage() {
                 setInput(propInput);
                 setLocationLabel(propInput.address || "Anna Nagar, Chennai, Tamil Nadu");
                 setActiveNav("dashboard");
-                setActiveTopTab("valuation");
                 runAnalysis(propInput);
               }}
               onViewOnMap={(lat, lon, address) => {
                 handleSelectCoordinates(lat, lon, address);
                 setActiveNav("risk-maps");
-                setActiveTopTab("map");
               }}
               onCompare={() => {
                 setActiveNav("comparison");
@@ -291,7 +255,6 @@ export default function DashboardPage() {
                 setInput(propInput);
                 setLocationLabel(propInput.address || "Anna Nagar, Chennai, Tamil Nadu");
                 setActiveNav("dashboard");
-                setActiveTopTab("valuation");
                 runAnalysis(propInput);
               }}
             />
@@ -317,7 +280,6 @@ export default function DashboardPage() {
               locationLabel={locationLabel}
               onBackToDashboard={() => {
                 setActiveNav("dashboard");
-                setActiveTopTab("valuation");
               }}
             />
           )}
@@ -345,13 +307,13 @@ export default function DashboardPage() {
 
           {activeNav === "dashboard" && (
             <>
-              {/* SECTION 1: TOP ROW (Embedded Satellite Map on Left + Find Valuation Card on Right) */}
+              {/* SECTION 1: TOP ROW (Wide Satellite GIS Map on Left + Shrunk Valuation Card on Right) */}
               <section
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2.35fr 0.9fr",
+                  gridTemplateColumns: "2.15fr 1fr",
                   gap: "16px",
-                  marginBottom: "18px",
+                  marginBottom: "16px",
                   alignItems: "stretch",
                 }}
               >
@@ -369,6 +331,7 @@ export default function DashboardPage() {
                 {/* Right: Find Climate-Adjusted Value Form */}
                 <HeroValuationCard
                   input={input}
+                  locationLabel={locationLabel}
                   onChangeInput={(updated) => setInput((prev) => ({ ...prev, ...updated }))}
                   onAnalyze={() => runAnalysis(input)}
                   isLoading={isLoading}
@@ -376,24 +339,17 @@ export default function DashboardPage() {
                 />
               </section>
 
-              {/* SECTION 2: MIDDLE ROW (3 Equal Cards: Property Overview, Climate Risk Score, Value Estimation) */}
+              {/* SECTION 2: MIDDLE ROW (2 Cards: Climate Risk Score & Value Estimation) */}
               <section
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1.35fr 1.05fr",
-                  gap: "18px",
-                  marginBottom: "18px",
+                  gridTemplateColumns: "1.15fr 1fr",
+                  gap: "16px",
+                  marginBottom: "16px",
                   alignItems: "stretch",
                 }}
               >
-                {/* Middle 1: Property Overview with Architectural Cadastre Profile */}
-                <PropertyOverviewCard
-                  input={input}
-                  locationLabel={locationLabel}
-                  onEditProperty={() => setIsEditModalOpen(true)}
-                />
-
-                {/* Middle 2: Overall Climate Risk Score (Speedometer Radial Gauge + Hazard Progress Bars) */}
+                {/* Middle 1: Overall Climate Risk Score (Speedometer Radial Gauge + Hazard Progress Bars) */}
                 <ClimateRiskScoreCard
                   overallScore={analysis?.overall_risk_score ?? 72}
                   overallCategory={analysis?.overall_risk_category ?? "High Risk"}
@@ -408,36 +364,38 @@ export default function DashboardPage() {
                   }}
                 />
 
-                {/* Middle 3: Executive Financial Valuation Card */}
+                {/* Middle 2: Executive Financial Valuation Card */}
                 <ClimateValuationCard
                   valuation={analysis?.valuation}
                   baseRate={input.market_rate_per_sqft}
                   areaSqft={input.area_sqft}
                   onOpenReport={() => setIsReportOpen(true)}
+                  onApplyBenchmarkRate={(benchmarkRate) => {
+                    const updated = { ...input, market_rate_per_sqft: benchmarkRate };
+                    setInput(updated);
+                    runAnalysis(updated);
+                  }}
                 />
               </section>
 
-              {/* SECTION 3: THIRD ROW (Risk Layers on Left + Key Insights on Right) */}
+              {/* SECTION 3: THIRD ROW (Live Environmental Metrics on Left + Key Insights on Right) */}
               <section
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1.55fr 1fr",
-                  gap: "18px",
-                  marginBottom: "18px",
+                  gridTemplateColumns: "1.38fr 1fr",
+                  gap: "16px",
+                  marginBottom: "16px",
                   alignItems: "stretch",
                 }}
               >
-                {/* Left: Risk Layers with 4 Textured GIS Cards */}
-                <MapLayersCard
-                  activeHazard={activeHazard}
-                  onChangeHazard={setActiveHazard}
-                  onViewAll={() => {
-                    setActiveNav("risk-maps");
-                    setActiveTopTab("map");
-                  }}
+                {/* Left: 100% Dynamic Live Environmental & Climate Sensor Telemetry */}
+                <LiveEnvironmentalMetricsCard
+                  features={analysis?.climate_features}
+                  elevationM={analysis?.climate_features?.elevation_m ?? 8}
+                  isLoading={isLoading}
                 />
 
-                {/* Right: Key Insights with Colored Vector Icons */}
+                {/* Right: Key Insights Synthesized from Real Location Data */}
                 <KeyInsightsCard
                   features={analysis?.climate_features}
                   floodScore={analysis?.risk_scores?.find((r) => r.hazard === "flood")?.score ?? 72}
@@ -445,34 +403,9 @@ export default function DashboardPage() {
                   cycloneScore={analysis?.risk_scores?.find((r) => r.hazard === "cyclone")?.score ?? 61}
                 />
               </section>
-
-              {/* SECTION 4: ADVANCED PREDICTIVE VALUATION & SCENARIO MODELING */}
-              <section
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1.15fr 1fr",
-                  gap: "18px",
-                  alignItems: "stretch",
-                }}
-              >
-                {/* Value Impact Breakdown Donut Chart */}
-                <ValueImpactBreakdownCard
-                  valuation={analysis?.valuation}
-                  floodScore={analysis?.risk_scores?.find((r) => r.hazard === "flood")?.score ?? 72}
-                  heatScore={analysis?.risk_scores?.find((r) => r.hazard === "heat")?.score ?? 58}
-                  cycloneScore={analysis?.risk_scores?.find((r) => r.hazard === "cyclone")?.score ?? 61}
-                />
-
-                {/* Climate Risk Over Time Line Projection */}
-                <ClimateRiskOverTimeCard />
-
-                {/* Future Scenarios Delta Card */}
-                <FutureScenarioCard />
-              </section>
             </>
           )}
         </main>
-      </div>
 
       {/* QUICK ASSESSMENT & PROPERTY EDIT MODAL */}
       {isEditModalOpen && (

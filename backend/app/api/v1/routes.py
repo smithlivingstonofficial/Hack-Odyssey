@@ -8,6 +8,8 @@ from app.schemas.property import (
     PropertyAnalysisResponse,
     GeocodeResult,
     MarketRateSuggestion,
+    PropertyPredictionInput,
+    PropertyPredictionResponse,
 )
 from app.services.feature_orchestrator import get_climate_features
 from app.services.geocoding import (
@@ -58,6 +60,11 @@ async def analyze_property(property_input: PropertyInput):
     # Step 1: Get location context
     location = await reverse_geocode(lat, lon)
     city = location.get("city") if location else None
+    state = location.get("state") if location else None
+    district = location.get("district") or city or "Tamil Nadu"
+
+    if not property_input.address and location:
+        property_input.address = location.get("display_name", f"{city or 'Tamil Nadu'}, {state or 'India'}")
 
     # Step 2: Get market rate (user-provided or benchmark)
     market_rate = property_input.market_rate_per_sqft or get_market_rate(city)
@@ -88,6 +95,28 @@ async def analyze_property(property_input: PropertyInput):
         market_rate,
     )
 
+    # Step 6: Query Tamil Nadu Climate Engine & ML Model
+    try:
+        from app.services.climate_engine import calculate_property_valuation
+        prop_type_val = property_input.property_type.value if hasattr(property_input.property_type, "value") else str(property_input.property_type)
+        climate_val = calculate_property_valuation(
+            district=district,
+            city=city or district,
+            latitude=lat,
+            longitude=lon,
+            area_sqft=property_input.area_sqft,
+            market_rate_per_sqft=market_rate,
+            property_type=prop_type_val,
+            area_name=property_input.address or city,
+        )
+        valuation.climate_engine_data = climate_val
+        if climate_val.get("ml_predicted_base_value"):
+            valuation.ml_predicted_base_value = climate_val["ml_predicted_base_value"]
+        if climate_val.get("benchmark_source"):
+            valuation.benchmark_source = climate_val["benchmark_source"]
+    except Exception as ce_err:
+        pass
+
     return PropertyAnalysisResponse(
         property_input=property_input,
         climate_features=climate_features,
@@ -96,6 +125,56 @@ async def analyze_property(property_input: PropertyInput):
         overall_risk_score=overall_score,
         overall_risk_category=overall_category,
     )
+
+
+@router.post("/predict", response_model=PropertyPredictionResponse)
+async def predict_property_endpoint(property: PropertyPredictionInput):
+    """
+    Dedicated endpoint matching the Tamil Nadu Climate-Adjusted Property Valuation specification.
+    """
+    from app.services.climate_engine import calculate_property_valuation
+    result = calculate_property_valuation(
+        district=property.district,
+        city=property.city,
+        latitude=property.latitude,
+        longitude=property.longitude,
+        area_sqft=property.area_sqft,
+        market_rate_per_sqft=property.market_rate_per_sqft,
+    )
+
+    return PropertyPredictionResponse(
+        property={
+            "district": property.district,
+            "city": property.city,
+            "latitude": property.latitude,
+            "longitude": property.longitude,
+            "area_sqft": property.area_sqft,
+            "market_rate_per_sqft": property.market_rate_per_sqft,
+        },
+        valuation={
+            "base_value": result["base_value"],
+            "ml_predicted_base_value": result.get("ml_predicted_base_value"),
+            "risk_score": result["risk"]["risk_score"],
+            "adjustment_percent": result["risk"]["adjustment_percent"],
+            "adjusted_value": result["adjusted_value"],
+        },
+        risk_breakdown={
+            "flood_exposure": result["flood_exposure"],
+            "heat_risk": result["heat"]["heat_risk"],
+            "tmax_change": result["heat"]["tmax_change"],
+            "cyclone_intensity": result["cyclone"]["cyclone_intensity"],
+            "nearest_cyclone_km": result["cyclone"]["nearest_cyclone_km"],
+            "max_nearby_wind_knots": result["cyclone"]["max_nearby_wind_knots"],
+        },
+        data_sources={
+            "heat": result["heat"]["heat_source"],
+            "cyclone": result["cyclone"]["cyclone_source"],
+            "flood": "isro_bhuvan_satellite_mask",
+        },
+        data_completeness=result["risk"]["data_completeness"],
+        available_factors=result["risk"]["available_factors"],
+    )
+
 
 
 @router.get("/geocode", response_model=Optional[GeocodeResult])

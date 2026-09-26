@@ -169,6 +169,16 @@ def calculate_valuation(
     total_pct = (total_impact / base_value * 100) if base_value > 0 else 0
     adjusted_value = base_value - total_impact
 
+    # Machine-Learning & Regional Valuation Prediction with Source Attribution
+    from app.services.climate_engine import predict_ml_base_valuation_with_source
+    area_label = property_input.address or ""
+    prop_type_str = property_input.property_type.value if hasattr(property_input.property_type, "value") else str(property_input.property_type)
+    ml_base, bench_source = predict_ml_base_valuation_with_source(
+        area_sqft=property_input.area_sqft,
+        area_name=area_label,
+        property_type=prop_type_str,
+    )
+
     return ValuationResult(
         base_value_inr=round(base_value),
         flood_impact=flood_impact,
@@ -177,4 +187,7 @@ def calculate_valuation(
         total_climate_impact_inr=round(total_impact),
         total_climate_impact_percentage=round(total_pct, 2),
         adjusted_value_inr=round(adjusted_value),
+        ml_predicted_base_value=ml_base,
+        benchmark_source=bench_source,
     )
+

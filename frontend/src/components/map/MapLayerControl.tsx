@@ -14,7 +14,6 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  Tag,
 } from "lucide-react";
 
 export type HazardLayerType = "thermal" | "flood" | "cyclone" | "radar" | "none";
@@ -26,9 +25,6 @@ export interface MapLayerControlProps {
   activeBasemap: BasemapType;
   onChangeBasemap: (basemap: BasemapType) => void;
   isLoadingLayer?: boolean;
-  showProperties?: boolean;
-  onToggleProperties?: (show: boolean) => void;
-  propertyCount?: number;
 }
 
 export const MapLayerControl: React.FC<MapLayerControlProps> = ({
@@ -37,9 +33,6 @@ export const MapLayerControl: React.FC<MapLayerControlProps> = ({
   activeBasemap,
   onChangeBasemap,
   isLoadingLayer = false,
-  showProperties = true,
-  onToggleProperties,
-  propertyCount,
 }) => {
   const [showLegend, setShowLegend] = useState<boolean>(true);
 
@@ -211,50 +204,6 @@ export const MapLayerControl: React.FC<MapLayerControlProps> = ({
             );
           })}
         </div>
-
-        {/* Real Property Prices Toggle Button */}
-        {onToggleProperties && (
-          <>
-            <div style={{ width: "1px", height: "20px", background: "#cbd5e1", margin: "0 2px" }} />
-            <button
-              type="button"
-              title="Toggle real property prices & cadastral building pins on the map"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "5px 12px",
-                borderRadius: "16px",
-                border: showProperties ? "1.5px solid #059669" : "1px solid #cbd5e1",
-                background: showProperties ? "#ecfdf5" : "transparent",
-                color: showProperties ? "#065f46" : "#64748b",
-                fontWeight: showProperties ? 700 : 500,
-                fontSize: "11px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                transition: "all 0.18s ease",
-              }}
-              onClick={() => onToggleProperties(!showProperties)}
-            >
-              <Tag style={{ width: 13, height: 13, color: showProperties ? "#059669" : "#64748b" }} />
-              <span>Property Prices</span>
-              {propertyCount !== undefined && propertyCount > 0 && (
-                <span
-                  style={{
-                    fontSize: "10px",
-                    background: showProperties ? "#059669" : "#e2e8f0",
-                    color: showProperties ? "#ffffff" : "#475569",
-                    padding: "1px 6px",
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                  }}
-                >
-                  {propertyCount}
-                </span>
-              )}
-            </button>
-          </>
-        )}
       </div>
 
       {/* Floating Active Hazard Legend (Bottom-Right) */}

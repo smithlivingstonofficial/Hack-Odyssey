@@ -16,6 +16,7 @@ interface ClimateValuationCardProps {
   baseRate?: number;
   areaSqft?: number;
   onOpenReport?: () => void;
+  onApplyBenchmarkRate?: (rate: number) => void;
 }
 
 export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
@@ -23,6 +24,7 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
   baseRate = 6000,
   areaSqft = 1200,
   onOpenReport,
+  onApplyBenchmarkRate,
 }) => {
   const baseValue = valuation?.base_value_inr ?? areaSqft * baseRate;
   const climateImpactPercentage = valuation?.total_climate_impact_percentage ?? 2.0;
@@ -31,6 +33,13 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
   const adjustedValue = valuation?.adjusted_value_inr ?? baseValue - climateImpactInr;
 
   const valueRetainedPct = Math.max(0, Math.min(100, 100 - climateImpactPercentage));
+
+  const benchmarkBase = valuation?.ml_predicted_base_value;
+  const benchmarkRate = benchmarkBase && areaSqft > 0 ? Math.round(benchmarkBase / areaSqft) : null;
+  const benchmarkAdjustedValue = benchmarkBase
+    ? Math.round(benchmarkBase * (1 - climateImpactPercentage / 100))
+    : null;
+  const isRateDivergent = benchmarkRate ? Math.abs(baseRate - benchmarkRate) / benchmarkRate > 0.15 : false;
 
   // Individual hazard impacts
   const floodPct = valuation?.flood_impact?.impact_percentage ?? 1.2;
@@ -43,7 +52,7 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
         background: "linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%)",
         border: "1px solid #e2e8f0",
         borderRadius: "18px",
-        padding: "18px 20px",
+        padding: "14px 16px",
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02), 0 10px 25px -5px rgba(0, 0, 0, 0.04)",
         fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif)",
         display: "flex",
@@ -61,7 +70,7 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "12px",
+            marginBottom: "10px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -94,7 +103,7 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
                 Value Estimation
               </h3>
               <p style={{ fontSize: "11px", color: "#64748b", margin: "1px 0 0 0", fontWeight: 500 }}>
-                Climate Discount & Financial Haircut
+                Weather Risk Impact on Value
               </p>
             </div>
           </div>
@@ -134,7 +143,24 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
             }}
           >
             <div>
-              <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Base Market Value</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Base Market Value</span>
+                {isRateDivergent && (
+                  <span
+                    style={{
+                      fontSize: "8px",
+                      fontWeight: 700,
+                      padding: "1px 5px",
+                      borderRadius: "4px",
+                      background: baseRate < (benchmarkRate || 0) ? "#fef3c7" : "#e0f2fe",
+                      color: baseRate < (benchmarkRate || 0) ? "#92400e" : "#0369a1",
+                      border: `1px solid ${baseRate < (benchmarkRate || 0) ? "#fde68a" : "#bae6fd"}`,
+                    }}
+                  >
+                    {baseRate < (benchmarkRate || 0) ? "Custom Rate (Below Benchmark)" : "Custom Rate (Above Benchmark)"}
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: "9.5px", color: "#94a3b8" }}>
                 {areaSqft.toLocaleString()} sq.ft @ ₹{baseRate.toLocaleString()}/sq.ft
               </div>
@@ -143,6 +169,72 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
               {formatINR(baseValue)}
             </div>
           </div>
+
+          {/* Model Prediction Benchmark */}
+          {valuation?.ml_predicted_base_value && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                padding: "7px 10px",
+                background: "linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)",
+                borderRadius: "8px",
+                border: "1px solid #bbf7d0",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "13px" }}>🤖</span>
+                  <div>
+                    <div style={{ fontSize: "10.5px", color: "#166534", fontWeight: 700 }}>
+                      Estimated Market Benchmark
+                    </div>
+                    <div style={{ fontSize: "9px", color: "#15803d" }}>
+                      {valuation.benchmark_source || "Based on regional property benchmark"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#15803d" }}>
+                    {formatINR(valuation.ml_predicted_base_value)}
+                  </div>
+                  {benchmarkRate && (
+                    <div style={{ fontSize: "8.5px", color: "#166534", fontWeight: 600 }}>
+                      ≈ ₹{benchmarkRate.toLocaleString()}/sq.ft
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action row to adopt benchmark or see adjusted benchmark */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "4px", borderTop: "1px dashed #bbf7d0" }}>
+                <span style={{ fontSize: "9px", color: "#047857", fontWeight: 600 }}>
+                  Adjusted for climate risk: <strong style={{ color: "#065f46" }}>{benchmarkAdjustedValue ? formatINR(benchmarkAdjustedValue) : "—"}</strong>
+                </span>
+                {onApplyBenchmarkRate && benchmarkRate && Math.abs(baseRate - benchmarkRate) > 100 && (
+                  <button
+                    type="button"
+                    onClick={() => onApplyBenchmarkRate(benchmarkRate)}
+                    style={{
+                      background: "#16a34a",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "2px 7px",
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 1px 3px rgba(22, 163, 74, 0.25)",
+                    }}
+                  >
+                    Sync Rate (₹{benchmarkRate.toLocaleString()})
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {/* Climate Discount Haircut */}
           <div
@@ -179,9 +271,9 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", fontWeight: 600, marginBottom: "4px" }}>
             <span style={{ color: "#059669", display: "flex", alignItems: "center", gap: "3px" }}>
               <ShieldCheck size={11} />
-              <span>{valueRetainedPct.toFixed(1)}% Capital Retained</span>
+              <span>{valueRetainedPct.toFixed(1)}% Value Protected</span>
             </span>
-            <span style={{ color: "#dc2626" }}>-{climateImpactPercentage.toFixed(1)}% Risk Haircut</span>
+            <span style={{ color: "#dc2626" }}>-{climateImpactPercentage.toFixed(1)}% Weather Impact</span>
           </div>
           <div style={{ height: "6px", background: "#fee2e2", borderRadius: "3px", overflow: "hidden", display: "flex" }}>
             <div
@@ -222,7 +314,7 @@ export const ClimateValuationCard: React.FC<ClimateValuationCardProps> = ({
             Climate-Adjusted Value
           </div>
           <div style={{ fontSize: "9.5px", color: "#93c5fd", marginTop: "1px" }}>
-            NPV Discounted under 30-Yr Hazards
+            Adjusted for long-term weather risks
           </div>
         </div>
         <div style={{ textAlign: "right" }}>

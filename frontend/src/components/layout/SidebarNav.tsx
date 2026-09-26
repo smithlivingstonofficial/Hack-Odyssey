@@ -13,6 +13,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  Layers,
 } from "lucide-react";
 
 export type NavTabType =
@@ -74,21 +75,58 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       style={{
         width: "250px",
         minWidth: "250px",
-        height: "calc(100vh - 68px)",
+        height: "100vh",
         background: "#ffffff",
         borderRight: "1px solid #e2e8f0",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "20px 14px 28px 14px",
+        padding: "16px 14px 20px 14px",
         position: "sticky",
-        top: "68px",
+        top: 0,
         zIndex: 40,
         fontFamily: "var(--font-sans)",
         boxSizing: "border-box",
       }}
     >
       <div>
+        {/* Brand Logo Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "4px 6px 16px 6px",
+            borderBottom: "1px solid #f1f5f9",
+            marginBottom: "16px",
+          }}
+        >
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.28)",
+              flexShrink: 0,
+            }}
+          >
+            <Layers size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.3px", lineHeight: "1.2" }}>
+              ClimateValue
+            </div>
+            <div style={{ fontSize: "10.5px", fontWeight: 600, color: "#64748b" }}>
+              Property Intelligence
+            </div>
+          </div>
+        </div>
+
         {/* Primary Action CTA Button: + New Assessment */}
         <button
           type="button"
@@ -241,7 +279,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               borderRadius: "6px",
             }}
           >
-            ● Model v2.4
+            ● Active
           </span>
         </div>
 
